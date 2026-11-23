@@ -1,0 +1,95 @@
+#include <stdio.h>
+
+#define DISTRICTS 38
+#define MONTHS 12
+
+void compute_district_totals(const double rain[][MONTHS], int rows, double totals[]) {
+    for (int i = 0; i < rows; i++) {
+        double sum = 0.0;
+        for (int j = 0; j < MONTHS; j++) {
+            sum += rain[i][j];
+        }
+        totals[i] = sum;
+    }
+}
+
+void compute_monthly_averages(const double rain[][MONTHS], int rows, double monthly_avg[]) {
+    for (int j = 0; j < MONTHS; j++) {
+        double sum = 0.0;
+        for (int i = 0; i < rows; i++) {
+            sum += rain[i][j];
+        }
+        monthly_avg[j] = (rows > 0) ? (sum / rows) : 0.0;
+    }
+}
+
+void find_wettest_cell(const double rain[][MONTHS], int rows,
+                       int *best_d, int *best_m, double *max_val) {
+    *best_d = 0;
+    *best_m = 0;
+    *max_val = rain[0][0];
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < MONTHS; j++) {
+            if (rain[i][j] > *max_val) {
+                *max_val = rain[i][j];
+                *best_d = i;
+                *best_m = j;
+            }
+        }
+    }
+}
+
+/* Compares each district's annual rainfall against 60% of the state's average annual rainfall. */
+void print_deficient_districts(const double totals[], int rows, double state_avg_annual) {
+    double threshold = 0.60 * state_avg_annual;
+    printf("Deficient districts (< %.2f mm annual): ", threshold);
+    int found = 0;
+    for (int i = 0; i < rows; i++) {
+        if (totals[i] < threshold) {
+            printf("D%d(%.1f) ", i + 1, totals[i]);
+            found = 1;
+        }
+    }
+    if (!found) printf("None");
+    printf("\n");
+}
+
+int main(void) {
+    double rain[DISTRICTS][MONTHS] = {0};
+
+    /* Sample populated values across 38 districts x 12 months */
+    for (int i = 0; i < DISTRICTS; i++) {
+        for (int j = 0; j < MONTHS; j++) {
+            rain[i][j] = 50.0 + ((i * 13 + j * 7) % 120);
+        }
+    }
+    /* Make district 4 deficient and district 11 a high-rainfall outlier */
+    for (int j = 0; j < MONTHS; j++) {
+        rain[3][j] = 10.0;
+    }
+    rain[10][6] = 420.5;
+
+    double totals[DISTRICTS];
+    double monthly_avg[MONTHS];
+    int best_d, best_m;
+    double max_val, state_avg_annual = 0.0;
+
+    compute_district_totals(rain, DISTRICTS, totals);
+    compute_monthly_averages(rain, DISTRICTS, monthly_avg);
+    find_wettest_cell(rain, DISTRICTS, &best_d, &best_m, &max_val);
+
+    for (int j = 0; j < MONTHS; j++) {
+        state_avg_annual += monthly_avg[j];
+    }
+
+    printf("District 1 annual total: %.1f mm | District 4 annual total: %.1f mm\n",
+           totals[0], totals[3]);
+    printf("July state avg: %.2f mm | State avg annual: %.2f mm\n",
+           monthly_avg[6], state_avg_annual);
+    printf("Wettest: District %d, Month %d -> %.1f mm\n",
+           best_d + 1, best_m + 1, max_val);
+    print_deficient_districts(totals, DISTRICTS, state_avg_annual);
+
+    return 0;
+}
