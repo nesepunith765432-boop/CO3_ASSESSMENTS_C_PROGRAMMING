@@ -1,0 +1,121 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+    long long comparisons;
+    long long moves; /* swaps for bubble/selection, shifts/inserts for insertion */
+} Metrics;
+
+static void swap_int(int *x, int *y) {
+    int t = *x;
+    *x = *y;
+    *y = t;
+}
+
+Metrics bubble_sort(int a[], int n) {
+    Metrics m = {0, 0};
+    for (int pass = 0; pass < n - 1; pass++) {
+        int swapped = 0;
+        for (int j = 0; j < n - 1 - pass; j++) {
+            m.comparisons++;
+            if (a[j] > a[j + 1]) {
+                swap_int(&a[j], &a[j + 1]);
+                m.moves++;
+                swapped = 1;
+            }
+        }
+        if (!swapped) break; /* early exit when already sorted */
+    }
+    return m;
+}
+
+Metrics selection_sort(int a[], int n) {
+    Metrics m = {0, 0};
+    for (int i = 0; i < n - 1; i++) {
+        int min_idx = i;
+        for (int j = i + 1; j < n; j++) {
+            m.comparisons++;
+            if (a[j] < a[min_idx]) {
+                min_idx = j;
+            }
+        }
+        if (min_idx != i) {
+            swap_int(&a[i], &a[min_idx]);
+            m.moves++;
+        }
+    }
+    return m;
+}
+
+Metrics insertion_sort(int a[], int n) {
+    Metrics m = {0, 0};
+    for (int i = 1; i < n; i++) {
+        int key = a[i];
+        int j = i - 1;
+        while (j >= 0) {
+            m.comparisons++;
+            if (a[j] > key) {
+                a[j + 1] = a[j];
+                m.moves++;
+                j--;
+            } else {
+                break;
+            }
+        }
+        a[j + 1] = key;
+    }
+    return m;
+}
+
+static void generate_input(int *arr, int n, int mode) {
+    for (int i = 0; i < n; i++) arr[i] = i + 1;
+    if (mode == 1) { /* nearly sorted: ~2% swaps */
+        int swaps = n / 50 > 1 ? n / 50 : 1;
+        for (int s = 0; s < swaps; s++) {
+            int idx1 = (s * 7) % n;
+            int idx2 = (idx1 + 1) % n;
+            swap_int(&arr[idx1], &arr[idx2]);
+        }
+    } else if (mode == 2) { /* reverse sorted */
+        for (int i = 0; i < n; i++) arr[i] = n - i;
+    } else if (mode == 3) { /* pseudo-random deterministic */
+        unsigned int seed = 42u;
+        for (int i = n - 1; i > 0; i--) {
+            seed = seed * 1664525u + 1013904223u;
+            int j = (int)(seed % (unsigned int)(i + 1));
+            swap_int(&arr[i], &arr[j]);
+        }
+    }
+}
+
+int main(void) {
+    const char *modes[] = {"Sorted", "Nearly-Sorted", "Reverse", "Random"};
+    int sizes[] = {100, 1000}; /* add 10000 for full benchmark */
+
+    for (int s = 0; s < 2; s++) {
+        int n = sizes[s];
+        int *base = malloc((size_t)n * sizeof(int));
+        int *work = malloc((size_t)n * sizeof(int));
+        printf("\n=== n = %d ===\n", n);
+
+        for (int mode = 0; mode < 4; mode++) {
+            generate_input(base, n, mode);
+
+            memcpy(work, base, (size_t)n * sizeof(int));
+            Metrics mb = bubble_sort(work, n);
+
+            memcpy(work, base, (size_t)n * sizeof(int));
+            Metrics ms = selection_sort(work, n);
+
+            memcpy(work, base, (size_t)n * sizeof(int));
+            Metrics mi = insertion_sort(work, n);
+
+            printf("%-13s | Bub: cmp=%7lld mv=%6lld | Sel: cmp=%7lld mv=%6lld | Ins: cmp=%7lld mv=%6lld\n",
+                   modes[mode], mb.comparisons, mb.moves, ms.comparisons, ms.moves, mi.comparisons, mi.moves);
+        }
+        free(base);
+        free(work);
+    }
+    return 0;
+}
