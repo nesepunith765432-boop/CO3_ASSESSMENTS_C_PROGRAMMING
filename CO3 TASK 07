@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_CANDIDATES 12
+#define MAX_VOTES 5000
+
+typedef struct {
+    int id;
+    int votes;
+} CandidateResult;
+
+static int cmp_desc(const void *p1, const void *p2) {
+    const CandidateResult *a = (const CandidateResult *)p1;
+    const CandidateResult *b = (const CandidateResult *)p2;
+    if (b->votes != a->votes) return (b->votes > a->votes) ? 1 : -1;
+    return (a->id > b->id) ? 1 : (a->id < b->id ? -1 : 0);
+}
+
+void tally_and_report(const int ballots[], int num_ballots, int num_candidates) {
+    int counts[MAX_CANDIDATES + 1] = {0};
+    int valid = 0, invalid = 0;
+
+    for (int i = 0; i < num_ballots; i++) {
+        int pick = ballots[i];
+        if (pick >= 1 && pick <= num_candidates) {
+            counts[pick]++;
+            valid++;
+        } else {
+            invalid++;
+        }
+    }
+
+    CandidateResult board[MAX_CANDIDATES];
+    for (int c = 1; c <= num_candidates; c++) {
+        board[c - 1].id = c;
+        board[c - 1].votes = counts[c];
+    }
+
+    qsort(board, (size_t)num_candidates, sizeof(CandidateResult), cmp_desc);
+
+    printf("Valid votes: %d | Invalid votes: %d\n", valid, invalid);
+    printf("Standings (descending):\n");
+    for (int i = 0; i < num_candidates; i++) {
+        printf("  Candidate %d: %d votes\n", board[i].id, board[i].votes);
+    }
+
+    if (valid == 0) {
+        printf("Result: No valid votes cast.\n");
+        return;
+    }
+
+    int top_votes = board[0].votes;
+    int tie_count = 0;
+    for (int i = 0; i < num_candidates && board[i].votes == top_votes; i++) {
+        tie_count++;
+    }
+
+    if (tie_count > 1) {
+        printf("Result: TIE at %d votes among candidates:", top_votes);
+        for (int i = 0; i < tie_count; i++) {
+            printf(" %d", board[i].id);
+        }
+        printf("\n");
+    } else {
+        printf("Result: Winner is Candidate %d with %d votes.\n", board[0].id, top_votes);
+    }
+}
+
+int main(void) {
+    /* Sample with invalid votes (0, -2, 9) and a tie at 3 votes (Candidates 1 and 3) */
+    int sample_ballots[] = {1, 3, 2, 1, 3, 0, -2, 9, 1, 3, 4};
+    int n_ballots = sizeof(sample_ballots) / sizeof(sample_ballots[0]);
+
+    tally_and_report(sample_ballots, n_ballots, 4);
+    return 0;
+}
