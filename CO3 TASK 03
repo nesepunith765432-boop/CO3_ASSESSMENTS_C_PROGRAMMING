@@ -1,0 +1,53 @@
+#include <stdio.h>
+
+/* a[] and b[] are sorted in DESCENDING order of score.
+   Copies both into out[] in descending order and returns total elements written. */
+int merge(const int a[], int na, const int b[], int nb, int out[]) {
+    int i = 0, j = 0, k = 0;
+    long long comparisons = 0;
+
+    while (i < na && j < nb) {
+        comparisons++;
+        /* >= keeps equal scores from a[] ahead of b[] (stable for Campus A) */
+        if (a[i] >= b[j]) {
+            out[k++] = a[i++];
+        } else {
+            out[k++] = b[j++];
+        }
+    }
+
+    while (i < na) {
+        out[k++] = a[i++];
+    }
+    while (j < nb) {
+        out[k++] = b[j++];
+    }
+
+    printf("(Comparisons used: %lld)\n", comparisons);
+    return k;
+}
+
+static void print_arr(const char *label, const int a[], int n) {
+    printf("%s", label);
+    for (int i = 0; i < n; i++) {
+        printf("%d%s", a[i], (i + 1 < n) ? " " : "");
+    }
+    printf("\n");
+}
+
+int main(void) {
+    int campusA[] = {98, 91, 85, 72};
+    int campusB[] = {95, 91, 80};
+    int merged[7];
+
+    int n = merge(campusA, 4, campusB, 3, merged);
+    print_arr("Merged: ", merged, n);
+
+    /* Test with one empty list */
+    int empty[1] = {0};
+    int merged_empty[4];
+    int n2 = merge(campusA, 4, empty, 0, merged_empty);
+    print_arr("With empty B: ", merged_empty, n2);
+
+    return 0;
+}
