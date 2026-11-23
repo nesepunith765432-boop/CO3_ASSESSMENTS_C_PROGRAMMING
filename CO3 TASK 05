@@ -1,0 +1,79 @@
+#include <stdio.h>
+#include <ctype.h>
+
+static int is_sep(unsigned char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
+}
+
+/* Counts words separated by spaces/tabs without using <string.h>. */
+int word_count(const char s[]) {
+    int count = 0, inside = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (!is_sep((unsigned char)s[i])) {
+            if (!inside) {
+                count++;
+                inside = 1;
+            }
+        } else {
+            inside = 0;
+        }
+    }
+    return count;
+}
+
+/* Converts string in-place to uppercase without <string.h>. */
+void to_upper_inplace(char s[]) {
+    for (int i = 0; s[i] != '\0'; i++) {
+        s[i] = (char)toupper((unsigned char)s[i]);
+    }
+}
+
+/* Reverses string in-place without <string.h>. */
+void reverse_inplace(char s[]) {
+    int len = 0;
+    while (s[len] != '\0') len++;
+    for (int i = 0, j = len - 1; i < j; i++, j--) {
+        char tmp = s[i];
+        s[i] = s[j];
+        s[j] = tmp;
+    }
+}
+
+/* Returns 1 if s reads the same both ways, ignoring case and non-letters. */
+int is_palindrome(const char s[]) {
+    int left = 0, right = 0;
+    while (s[right] != '\0') right++;
+    right--;
+
+    while (left < right) {
+        while (left < right && !isalpha((unsigned char)s[left])) left++;
+        while (left < right && !isalpha((unsigned char)s[right])) right--;
+        if (left < right) {
+            unsigned char c1 = (unsigned char)tolower((unsigned char)s[left]);
+            unsigned char c2 = (unsigned char)tolower((unsigned char)s[right]);
+            if (c1 != c2) return 0;
+            left++;
+            right--;
+        }
+    }
+    return 1;
+}
+
+int main(void) {
+    const char *msg1 = " Meet at the library at 5 PM ";
+    const char *msg2 = "Fast\tSMS\t\tFeedback";
+
+    printf("Words (msg1): %d\n", word_count(msg1));
+    printf("Words (msg2 with tabs): %d\n", word_count(msg2));
+    printf("Palindromes: %d %d\n",
+           is_palindrome("Madam, I'm Adam"),
+           is_palindrome("Hello"));
+
+    char buf[128] = "Feedback ok";
+    to_upper_inplace(buf);
+    printf("Upper: %s\n", buf);
+    reverse_inplace(buf);
+    printf("Reversed: %s\n", buf);
+
+    return 0;
+}
