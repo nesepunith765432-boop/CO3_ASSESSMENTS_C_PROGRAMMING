@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_RESIDENTS 500
+#define NAME_LEN 30
+
+static void trim_newline(char *s) {
+    size_t len = strlen(s);
+    if (len > 0 && s[len - 1] == '\n') {
+        s[len - 1] = '\0';
+    }
+}
+
+/* Sorts an index array idx[0..n-1] so names[idx[i]] is in ascending order. */
+void sort_indices(char names[][NAME_LEN], int idx[], int n,
+                  long long *cmp_count, long long *idx_swaps) {
+    *cmp_count = 0;
+    *idx_swaps = 0;
+    for (int i = 0; i < n; i++) idx[i] = i;
+
+    for (int i = 0; i < n - 1; i++) {
+        int swapped = 0;
+        for (int j = 0; j < n - 1 - i; j++) {
+            (*cmp_count)++;
+            if (strcmp(names[idx[j]], names[idx[j + 1]]) > 0) {
+                int tmp = idx[j];
+                idx[j] = idx[j + 1];
+                idx[j + 1] = tmp;
+                (*idx_swaps)++;
+                swapped = 1;
+            }
+        }
+        if (!swapped) break;
+    }
+}
+
+/* Binary search over sorted indirect directory; returns original row or -1. */
+int binary_search_dir(char names[][NAME_LEN], const int idx[], int n,
+                      const char *target, long long *steps) {
+    *steps = 0;
+    int low = 0, high = n - 1;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        (*steps)++;
+        int cmp = strcmp(names[idx[mid]], target);
+        if (cmp == 0) return idx[mid];
+        else if (cmp < 0) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;
+}
+
+void report_duplicates(char names[][NAME_LEN], const int idx[], int n) {
+    printf("Duplicates:\n");
+    int dup_found = 0;
+    for (int i = 1; i < n; i++) {
+        if (strcmp(names[idx[i - 1]], names[idx[i]]) == 0) {
+            printf("  - %s\n", names[idx[i]]);
+            dup_found = 1;
+        }
+    }
+    if (!dup_found) printf("  None\n");
+}
+
+int main(void) {
+    char names[MAX_RESIDENTS][NAME_LEN] = {
+        "Rohan", "Ananya", "Vikram", "Ananya", "Meera", "Kabir"
+    };
+    int n = 6;
+    int idx[MAX_RESIDENTS];
+    long long cmps = 0, swaps = 0, b_steps = 0;
+
+    /* Optional interactive line read example using fgets */
+    /* fgets(names[n], NAME_LEN, stdin); trim_newline(names[n]); */
+    trim_newline(names[0]);
+
+    sort_indices(names, idx, n, &cmps, &swaps);
+    printf("Sorted directory (cmp=%lld, index swaps=%lld):\n", cmps, swaps);
+    for (int i = 0; i < n; i++) {
+        printf("  %d: %s\n", i, names[idx[i]]);
+    }
+
+    report_duplicates(names, idx, n);
+
+    int found = binary_search_dir(names, idx, n, "Meera", &b_steps);
+    printf("Search 'Meera' -> orig_row=%d (comparisons=%lld)\n", found, b_steps);
+
+    found = binary_search_dir(names, idx, n, "Zoya", &b_steps);
+    printf("Search 'Zoya' -> orig_row=%d (comparisons=%lld)\n", found, b_steps);
+
+    return 0;
+}
