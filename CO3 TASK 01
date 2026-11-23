@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+long long linear_steps = 0;
+long long binary_steps = 0;
+
+/* Linear search on an (unsorted) array; counts key comparisons. */
+int linear_search(const int a[], int n, int key) {
+    linear_steps = 0;
+    for (int i = 0; i < n; i++) {
+        linear_steps++;
+        if (a[i] == key) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* Overflow-safe binary search on a sorted ascending array; counts comparisons. */
+int binary_search(const int a[], int n, int key) {
+    binary_steps = 0;
+    int low = 0, high = n - 1;
+
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        binary_steps++;
+        if (a[mid] == key) {
+            return mid;
+        } else if (a[mid] < key) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return -1;
+}
+
+int main(void) {
+    /* Trial catalogue of 10 books (sorted for binary search) */
+    int sorted_acc[] = {1021, 1048, 1103, 1190, 1222, 1305, 1377, 1402, 1460, 1533};
+    int unsorted_acc[] = {1305, 1021, 1460, 1190, 1533, 1048, 1377, 1103, 1402, 1222};
+    int n = sizeof(sorted_acc) / sizeof(sorted_acc[0]);
+    int keys[] = {1021, 1305, 1533, 1400}; /* beginning, middle, end, missing */
+
+    printf("=== Trial (n = %d) ===\n", n);
+    for (int k = 0; k < 4; k++) {
+        int l_pos = linear_search(unsorted_acc, n, keys[k]);
+        int b_pos = binary_search(sorted_acc, n, keys[k]);
+        printf("Key %d -> Linear: idx=%d (cmp=%lld) | Binary: idx=%d (cmp=%lld)\n",
+               keys[k], l_pos, linear_steps, b_pos, binary_steps);
+    }
+
+    /* Scaling check for N = 100,000 sorted accession numbers */
+    int N = 100000;
+    int *big = malloc((size_t)N * sizeof(int));
+    if (big) {
+        for (int i = 0; i < N; i++) big[i] = i * 2 + 1000;
+        binary_search(big, N, big[N / 2]);
+        printf("\nN=%d mid search binary comparisons: %lld\n", N, binary_steps);
+        binary_search(big, N, -1);
+        printf("N=%d missing search binary comparisons: %lld\n", N, binary_steps);
+        free(big);
+    }
+    return 0;
+}
